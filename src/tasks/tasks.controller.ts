@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Delete, Param, Patch, Body, Put, Query, NotFoundException, ValidationPipe } from "@nestjs/common";
+import { Controller, Get, Post, Delete, Param, Patch, Body, Put, Query, NotFoundException, ValidationPipe, ParseIntPipe } from "@nestjs/common";
 import { TasksService } from "./tasks.service";
-import { ITask, TaskStatus } from "./task.model";
+import { TaskStatus } from "./task-status.enum";
 import { CreateTaskDto } from "./dto/create-task.dto";
 import { GetTasksFilter } from "./dto/get-tasks-filter.dto";
 import { TaskStatusValidationPipe } from "./pipes/task-status-validation.pipe";
+import { Task } from "./task.entity";
 
 @Controller('tasks')
 export class TasksController {
@@ -11,32 +12,34 @@ export class TasksController {
   constructor(private tasksService: TasksService) {}
 
   @Get()
-  getTasks(@Query(ValidationPipe) filterDto: GetTasksFilter): Array<ITask> {
-    if (Object.keys(filterDto).length) {
-      return this.tasksService.getTasksWithFilters(filterDto);
-    }
-    return this.tasksService.getAllTasks();
+  getTasks(@Query(ValidationPipe) filterDto: GetTasksFilter): Promise<Task[]> {
+    return this.tasksService.getTasks(filterDto);
   }
 
   @Get('/:id')
-  getTaskById(@Param('id') id: string): ITask {
+  getTaskById(@Param('id', ParseIntPipe) id: number): Promise<Task> {
     return this.tasksService.getTaskById(id);
   }
 
   @Post()
-  createTask(@Body() taskDto: CreateTaskDto): ITask {
+  createTask(@Body() taskDto: CreateTaskDto): Promise<Task> {
     return this.tasksService.createTask(taskDto)
   }
 
+  @Delete('/:id')
+  async deleteTask(@Param('id', ParseIntPipe) id: number): Promise<any> {
+    await this.tasksService.deleteTask(id);
+    return { status: 200, message: 'Deleted Successfully' }
+  }
+
+  // #region Old Logic With Static Array
+
+
   @Patch('/:id/status')
-  updateTaskStatus(@Param('id') id: string, @Body('status', TaskStatusValidationPipe) status: TaskStatus): ITask {
+  updateTaskStatus(@Param('id', ParseIntPipe) id: number, @Body('status', TaskStatusValidationPipe) status: TaskStatus): Promise<Task> {
     return this.tasksService.updateTask(id, status);
   }
 
-  @Delete('/:id')
-  deleteTask(@Param('id') id: string): any {
-    this.tasksService.deleteTask(id);
-    return { status: 200, message: 'Deleted Successfully' }
-  }
+  // #endregion
 
 }
