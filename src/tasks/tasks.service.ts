@@ -9,18 +9,22 @@ import { User } from '../auth/user.entity';
 
 @Injectable()
 export class TasksService {
-
   constructor(
     @InjectRepository(TaskRepository)
-    private taskRepository: TaskRepository
+    private taskRepository: TaskRepository,
   ) {}
 
-  public async getTasks(filterDto: GetTasksFilter, user: User): Promise<Task[]> {
+  public async getTasks(
+    filterDto: GetTasksFilter,
+    user: User,
+  ): Promise<Task[]> {
     return this.taskRepository.getTasks(filterDto, user);
   }
 
   public async getTaskById(id: number, user: User): Promise<Task> {
-    const found = await this.taskRepository.findOne({id, user_id: user.id});
+    const found = await this.taskRepository.findOne({
+      where: { id, user_id: user.id },
+    });
 
     if (!found) {
       throw new NotFoundException(` Task with id:${id} not found`);
@@ -29,7 +33,10 @@ export class TasksService {
     return found;
   }
 
-  public async createTask(createTaskDto: CreateTaskDto, user: User): Promise<Task> {
+  public async createTask(
+    createTaskDto: CreateTaskDto,
+    user: User,
+  ): Promise<Task> {
     return this.taskRepository.createTask(createTaskDto, user);
   }
 
@@ -39,14 +46,18 @@ export class TasksService {
     // await found.remove();
 
     // delete method is only called DB once
-    const result = await this.taskRepository.delete({id, user_id: user.id});
+    const result = await this.taskRepository.delete({ id, user_id: user.id });
 
     if (result.affected === 0) {
       throw new NotFoundException(`Task with id:${id} not found.`);
     }
   }
 
-  public async updateTask(id: number, status: TaskStatus, user: User): Promise<Task> {
+  public async updateTask(
+    id: number,
+    status: TaskStatus,
+    user: User,
+  ): Promise<Task> {
     const task = await this.getTaskById(id, user);
     task.status = status;
     await task.save();
