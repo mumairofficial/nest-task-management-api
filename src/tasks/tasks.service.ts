@@ -33,13 +33,13 @@ export class TasksService {
     return this.taskRepository.createTask(createTaskDto, user);
   }
 
-  public async deleteTask(id: number): Promise<void> {
+  public async deleteTask(id: number, user: User): Promise<void> {
     // expensive task because first reterive and second delete
     // const found = await this.getTaskById(id);
     // await found.remove();
 
     // delete method is only called DB once
-    const result = await this.taskRepository.delete(id);
+    const result = await this.taskRepository.delete({id, user_id: user.id});
 
     if (result.affected === 0) {
       throw new NotFoundException(`Task with id:${id} not found.`);
